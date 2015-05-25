@@ -74,7 +74,6 @@ module.exports = function (grunt) {
             files = grunt.file.expand(this.filesSrc),
             flen = files.length,
             readSettings = {},
-			remoteArry = [],
             isRelaxError = false;
 
         isRelaxError = options.relaxerror.length && options.relaxerror.length !== '';
@@ -121,7 +120,6 @@ module.exports = function (grunt) {
 
             if (files.length) {
                 // fix: Fatal error: Unable to read 'undefined' file (Error code: ENOENT).
-				console.log(!files[counter]);
                 if (!files[counter]) {
                     return;
                 }
@@ -157,8 +155,6 @@ module.exports = function (grunt) {
                     proxy: options.proxy,       // Proxy to pass to the w3c library
                     callback: function (res) {
 					
-						console.error('Callback ...');
-
                         flen = files.length;
 
                         if (!res.messages) {
@@ -277,7 +273,6 @@ module.exports = function (grunt) {
                 };
 
 				if (validator.name === cssValidation){
-					console.log('CSS validation ...');
                     w3cjs_options.validate = 'css';
                     w3cjs_options.profile = options.profile;
                     w3cjs_options.medium = options.medium;
