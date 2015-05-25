@@ -10,10 +10,12 @@
 
 module.exports = function (grunt) {
 
-    var w3cjs = require('w3cjs');
+    var w3cjs = require('w3cvalidator');
     var colors = require('colors');
-    var chalk = require('chalk');
     var rval = require('./lib/remoteval');
+
+   	var htmlValidation = 'html-validation';
+    var cssValidation = 'css-validation';
 
     colors.setTheme({
         silly: 'rainbow',
@@ -49,7 +51,7 @@ module.exports = function (grunt) {
         retryCount = 0,
         reportFilename = '';
 
-    grunt.registerMultiTask('validation', 'HTML W3C validation.', function () {
+    var validate = function () {
         // Merge task-specific and/or target-specific options with these defaults.
         var options = this.options({
             path: 'validation-status.json',
@@ -62,13 +64,17 @@ module.exports = function (grunt) {
             maxTry: 3,
             relaxerror: [],
             doctype: false, // Defaults false for autodetect
-            charset: false // Defaults false for autodetect
+            charset: false, // Defaults false for autodetect
+ 			profile: 'css3', // possible profiles are: none, css1, css2, css21, css3, svg, svgbasic, svgtiny, mobile, atsc-tv, tv
+            medium: 'all', // possible media are: all, aural, braille, embossed, handheld, print, projection, screen, tty, tv, presentation
+            warnings: 'no' // possible warnings are: 2 (all), 1 (normal), 0 (most important), no (no warnings)
         });
 
         var done = this.async(),
             files = grunt.file.expand(this.filesSrc),
             flen = files.length,
             readSettings = {},
+			remoteArry = [],
             isRelaxError = false;
 
         isRelaxError = options.relaxerror.length && options.relaxerror.length !== '';
@@ -105,15 +111,20 @@ module.exports = function (grunt) {
         };
 
         var wrapfile,
-            wrapfile_line_start = 0;
+            wrapfile_line_start = 0,
+			validator = this;
+		
+		counter = 0;
+		reportArry = [];
+			
         var validate = function (files) {
+
             if (files.length) {
                 // fix: Fatal error: Unable to read 'undefined' file (Error code: ENOENT).
+				console.log(!files[counter]);
                 if (!files[counter]) {
-                    done();
                     return;
                 }
-
 
                 if (grunt.file.exists(options.path)) {
                     readSettings = grunt.file.readJSON(options.path);
@@ -138,13 +149,15 @@ module.exports = function (grunt) {
                 }
 
                 var w3cjs_options = {
-                    //file: files[counter],       // file can either be a local file or a remote file
+                    file: files[counter],       // file can either be a local file or a remote file
                     // file: 'http://localhost:9001/010_gul006_business_landing_o2_v11.html',
                     output: 'json',             // Defaults to 'json', other option includes html
                     doctype: options.doctype,   // Defaults false for autodetect
                     charset: options.charset,   // Defaults false for autodetect
                     proxy: options.proxy,       // Proxy to pass to the w3c library
                     callback: function (res) {
+					
+						console.error('Callback ...');
 
                         flen = files.length;
 
@@ -177,10 +190,9 @@ module.exports = function (grunt) {
                         };
 
                         if (len) {
-                            var errorCount = 0,
-                                prop;
+                            var errorCount = 0;
 
-                            for (prop in res.messages) {
+                            for (var prop in res.messages) {
                                 res.messages[prop].unwrapLine = res.messages[prop].lastLine - wrapfile_line_start;
                             }
 
@@ -264,6 +276,14 @@ module.exports = function (grunt) {
                     }
                 };
 
+				if (validator.name === cssValidation){
+					console.log('CSS validation ...');
+                    w3cjs_options.validate = 'css';
+                    w3cjs_options.profile = options.profile;
+                    w3cjs_options.medium = options.medium;
+                    w3cjs_options.warnings = options.warnings;
+				}
+
                 if (options.wrapfile) {
                     if (!wrapfile) {
                         wrapfile = grunt.file.read(options.wrapfile);
@@ -277,7 +297,8 @@ module.exports = function (grunt) {
 
                 // override default server
                 if (options.serverUrl) {
-                    w3cjs.setW3cCheckUrl(options.serverUrl);
+                    w3cjs.setW3cHtmlCheckUrl(options.serverUrl);
+					w3cjs.setW3cCssCheckUrl(options.serverUrl);
                 }
 
                 w3cjs.validate(w3cjs_options);
@@ -339,6 +360,16 @@ module.exports = function (grunt) {
             validate(files);
         }
 
-    });
+    };
+	
+	function getValidate(validationType) {
+        return function () {
+            this.name = validationType || validate.name;
+            validate.apply(this, arguments);
+        };
+    }
+
+    grunt.registerMultiTask(htmlValidation, 'HTML W3C validation.', getValidate(htmlValidation));
+    grunt.registerMultiTask(cssValidation, 'CSS W3C validation.', getValidate(cssValidation));
 
 };
