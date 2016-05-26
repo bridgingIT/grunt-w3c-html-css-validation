@@ -32,7 +32,7 @@
     "chalk": "^0.5.1",
     "colors": "~0.6.2",
     "request": "~2.40.0",
-    "w3cvalidator": "mryvlin/w3cjs#88e27e09fef0db4a744ec4736dc9cdde438ba202"
+    "w3cvalidator": "bridgingIT/w3cjs#11d65ea02bd6e5450fcafd7e83da3a539c1d0c33"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
